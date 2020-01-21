@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Sanketh's Email</title>
+</head>
+<body>
+    <h1>My Email</h1>
+    
+    <table>
+        <tr>
+            <td>Encrypted:</td>
+            <td><code id="encEmail">****</code></td>
+        </tr>
+        <tr>
+            <td>Partial Key (last 13 bytes):</td>
+            <td><code id="partialKey">****</code></td>
+        </tr>
+        <tr>
+            <td>Decrypted:</td>
+            <td><code id="decEmail">****</code></td>
+        </tr>
+    </table>
+
+    <button onclick="decrypt_email()" style="margin: 5px;">Decrypt Email</button>
+    
+    <pre id="progress"></pre>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aes-js/3.1.2/index.min.js" integrity="sha256-ahHqM0CBwtcKufWj6VHBM+SzH9DQ6a3WGBFfB/oKNt8=" crossorigin="anonymous"></script>
+    <script>
+        var encEmailField = document.getElementById("encEmail");
+        var decEmailField = document.getElementById("decEmail");
+        var partialKeyField = document.getElementById("partialKey");
+        var progressField = document.getElementById("progress");
+        
+        var partialKey = [245, 7, 193, 186, 145, 44, 235, 202, 243, 116, 73, 60, 103];
+        partialKeyField.innerText = aesjs.utils.hex.fromBytes(partialKey);
+        
+        var encryptedBytes = [128, 227, 5, 70, 34, 117, 145, 47, 1, 115, 218, 148, 254, 211, 147, 224, 150, 89, 197, 0, 87, 255, 246, 25, 213, 235, 83, 132];
+        encEmailField.innerText = aesjs.utils.hex.fromBytes(encryptedBytes);
+        
+        var decEmail = null;
+        
+        function decrypt_email(){
+            // Bruteforce key to decrypt email.
+            for (var byteOne = 0; byteOne < 256; byteOne++){
+                for (var byteTwo = 0; byteTwo < 20; byteTwo++){
+                    for (var byteThree = 0; byteThree < 256; byteThree++){
+                        var byteGuesses = [byteOne, byteTwo, byteThree];
+                        var guess = byteGuesses.concat(partialKey);
+                        var aesCtr = new aesjs.ModeOfOperation.ctr(guess);
+                        var decryptedBytes = aesCtr.decrypt(encryptedBytes);
+                        var decSuccess = true;
+                        for (var i = 0; i < 8; i++){
+                            if (decryptedBytes[i] !== 48){
+                                decSuccess = false
+                            }
+                        }
+                        if (decSuccess) {
+                            decEmail = decryptedBytes.slice(8,decryptedBytes.length);
+                        }
+                    }
+                }
+            }
+            if (decEmail) {
+                progressField.innerHTML = "Found key!!\n";
+                decEmailField.innerHTML = aesjs.utils.utf8.fromBytes(decEmail) + "\n";
+            }
+        }
+    </script>
+</body>
+</html> 
